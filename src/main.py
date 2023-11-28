@@ -16,35 +16,34 @@ async def on_ready():
     
 @tree.command(name="help")
 async def help(ctx):
-    await ctx.channel.send("/createchannels arg1: num_of_teams arg2: team, names, separated")
+    await ctx.channel.send("/createchannels arg1: team, names, separated")
     await ctx.channel.send("/cleanup - clears server")
 
 @tree.command(name="createchannels")
-async def createchannels(ctx, channelnumber: int, listofclansarg: str):
+async def createchannels(ctx, listofclansarg: str):
     clanlist = [clan.strip() for clan in listofclansarg.split(',')]
-    
-    if len(clanlist) == int(channelnumber):
-        ClansList = []
-        await ctx.channel.send(f"Creating categories: {clanlist}")
 
-        for clan in clanlist:
-            # Create category
-            category = await ctx.guild.create_category(clan)
+    ClansList = []
+    await ctx.channel.send(f"Creating categories: {clanlist}")
 
-            ClansList.append(category)
+    for clan in clanlist:
+        # Create category
+        category = await ctx.guild.create_category(clan)
+
+        ClansList.append(category)
             
-            # Deny all roles access to the category
-            await category.set_permissions(ctx.guild.default_role, read_messages=False, connect=False)
+        # Deny all roles access to the category
+        await category.set_permissions(ctx.guild.default_role, read_messages=False, connect=False)
 
-            # Create roles and give access to the category
-            role = await ctx.guild.create_role(name=f"{clan}_role")
-            await category.set_permissions(role, read_messages=True, connect=True)
+        # Create roles and give access to the category
+        role = await ctx.guild.create_role(name=f"{clan}_role")
+        await category.set_permissions(role, read_messages=True, connect=True)
 
-            await ctx.channel.send(f"Creating channels for: {clan}")
+        await ctx.channel.send(f"Creating channels for: {clan}")
 
-            # Create text and voice channels within the category
-            await ctx.guild.create_text_channel(clan+"_general", category=category)
-            await ctx.guild.create_voice_channel(clan+"_voice", category=category)
+        # Create text and voice channels within the category
+        await ctx.guild.create_text_channel(clan+"_general", category=category)
+        await ctx.guild.create_voice_channel(clan+"_voice", category=category)
 
         await ctx.channel.send("Categories and channels created")
 
@@ -67,9 +66,6 @@ async def createchannels(ctx, channelnumber: int, listofclansarg: str):
         # Create text and voice channels within the leaders category
         await ctx.guild.create_text_channel("leaders_general", category=leaders_category)
         await ctx.guild.create_voice_channel("leaders_voice", category=leaders_category)
-
-    else:
-        await ctx.channel.send(f"Incorrect amount of clans: I've gotten {len(clanlist)} clans, but {channelnumber} were expected")
 
 @tree.command(name="kickteam", description="Kicks all members with specified team role")
 @commands.has_role("admin")
