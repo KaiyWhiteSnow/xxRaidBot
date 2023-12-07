@@ -1,0 +1,1 @@
+discordToken = "your.token.here"
